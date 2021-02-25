@@ -28,10 +28,13 @@ public class SmsReceiverPlugin extends CordovaPlugin {
         super();
     }
 
+
+
     @Override
     public boolean execute(String action, JSONArray arg1,
                            final CallbackContext callbackContext) throws JSONException {
-
+      //  System.out.println("JACK: " + action);
+        
         if (ACTION_HAS_SMS_POSSIBILITY.equals(action)) {
             hasSmsPossibility(callbackContext);
             return true;
@@ -52,10 +55,12 @@ public class SmsReceiverPlugin extends CordovaPlugin {
     private void stopReceiveSms(CallbackContext callbackContext) {
         if (this.smsReceiver != null) {
             smsReceiver.stopReceiving();
+
         }
 
         this.isReceiving = false;
-
+        // this when you stop it then you should do unregisterReciever here
+        // this.cordova.getActivity().unregisterReceiver(this.smsReceiver);
         // 1. Stop the receiving context
         PluginResult pluginResult = new PluginResult(
                 PluginResult.Status.NO_RESULT);
@@ -67,6 +72,20 @@ public class SmsReceiverPlugin extends CordovaPlugin {
                 PluginResult.Status.OK);
         callbackContext.sendPluginResult(pluginResult);
     }
+    //TODO when you enter and exit the second time you won't get read sms the reason don't know
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        try{
+            if(this.smsReceiver != null){
+                this.cordova.getActivity().unregisterReceiver(this.smsReceiver);
+            }
+        }catch (IllegalArgumentException e){
+            this.smsReceiver = null;
+        }
+    }
+
+
 
     private void receiveSms(CallbackContext callbackContext) {
         // if already receiving (this case can happen if the startReception is called
@@ -79,8 +98,8 @@ public class SmsReceiverPlugin extends CordovaPlugin {
             this.callbackReceive.sendPluginResult(pluginResult);
 
             // ... before registering a new one to the sms receiver
+            this.isReceiving = true;
         }
-        this.isReceiving = true;
 
         if (this.smsReceiver == null) {
             this.smsReceiver = new SmsReceiver();
